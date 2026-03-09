@@ -1,0 +1,28 @@
+
+amazon
+curl 'https://realtime.oxylabs.io/v1/queries' \
+--user "kilik42_eJDy2:6cq=C_8u_4Ubd8sz" \
+-H "Content-Type: application/json" \
+-d '{
+        "source": "amazon_product",
+        "query": "B07FZ8S74R",
+        "geo_location": "90210",
+        "parse": true
+    }'
+
+
+
+    google
+
+    curl 'https://realtime.oxylabs.io/v1/queries' \
+--user 'kilik42_eJDy2:6cq=C_8u_4Ubd8sz' \
+-H 'Content-Type: application/json' \
+-d '{
+        "source": "google_search",
+        "query": "adidas",
+        "geo_location": "California,United States",
+        "parse": true
+    }'
+
+
+     uv run streamlit run main.py

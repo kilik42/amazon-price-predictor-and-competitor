@@ -1,0 +1,37 @@
+import streamlit as st  
+
+def render_header():
+    st.title("Amazon Price Competitor")
+    st.write("Welcome to the Amazon Price Competitor app! This application allows you to track and compare prices of products on Amazon. You can enter the product ASIN and our app will fetch the current price and compare it with historical data to help you make informed purchasing decisions.")
+    st.caption("Please enter the Amazon product ASIN # to get started.")
+
+
+def render_inputs():
+    asin = st.text_input("Enter the Amazon product ASIN #:", placeholder="B08N5WRWNW")
+    if asin:
+        st.write(f"You entered: {asin}")
+        # Here you can add the logic to fetch and display the price information based on the ASIN or URL provided.
+    geo = st.text_input("Enter the Geo location (optional):", placeholder="e.g., US, UK, DE")
+    if geo:
+        st.write(f"You entered Geo location: {geo}")
+        # Here you can add the logic to fetch and display price information based on the Geo location provided.
+    domain  = st.selectbox("Select the Amazon domain:", options=["amazon.com", "amazon.co.uk", "amazon.de", "amazon.fr", "amazon.it"])
+    st.write(f"You selected domain: {domain}")
+    # Here you can add the logic to fetch and display price information based on the selected domain
+    return asin.strip(), geo.strip(), domain
+
+def main():
+    st.set_page_config(page_title="Amazon Price Competitor", page_icon=":money_with_wings:", layout="centered")
+    render_header()
+    asin, geo, domain = render_inputs()
+    # Here you can add the logic to fetch and display price information based on the ASIN, Geo location, and domain provided by the user.
+    if st.button("scrape product") and asin:
+        with st.spinner("Fetching price information..."):
+            # Here you can add the logic to fetch and display price information based on the ASIN, Geo location, and domain provided by the user.
+            st.success("Price information fetched successfully!")
+    elif st.button("scrape product") and not asin:
+        st.error("Please enter a valid ASIN to fetch price information.")
+
+        
+if __name__ == "__main__":
+    main()
