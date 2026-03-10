@@ -8,7 +8,7 @@ import streamlit as st
 from dotenv import load_dotenv
 
 load_dotenv() # Load environment variables from .env file
-OXYLABS_BASE_URL = "https://api.oxylabs.io/v1/queries"
+OXYLABS_BASE_URL = "https://realtime.oxylabs.io/v1/queries"
  # Base URL for Oxylabs API
 
 def extract_content(payload):
@@ -36,7 +36,7 @@ def scrape_product_details(asin, geo=None, domain=None):
         "source": "amazon_product",
         "query": asin,
         "geo_location": geo,
-        "domain": domain,
+        # "domain": domain,
         "parse": True
     }
 
@@ -90,7 +90,8 @@ def post_query(payload):
     response = requests.post(
         OXYLABS_BASE_URL,
         json=payload,
-        auth=(username, password)
+        auth=(username, password),
+        timeout=30,
     )
     # if response.status_code == 200:
     #     print("Price information fetched successfully!")
@@ -139,7 +140,7 @@ def scrape_price(asin, geo=None, domain=None):
     payload = {
         "source": "amazon_product",
         "query": asin,
-        "domain": domain,
+        # "domain": domain,
         "geo_location": geo,
         "parse": True
     }

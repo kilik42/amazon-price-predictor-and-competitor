@@ -20,24 +20,32 @@ def render_inputs():
     domain  = st.selectbox("Select the Amazon domain:", options=["amazon.com", "amazon.co.uk", "amazon.de", "amazon.fr", "amazon.it"])
     st.write(f"You selected domain: {domain}")
     # Here you can add the logic to fetch and display price information based on the selected domain
-    return asin.strip(), geo.strip(), domain
+    return asin.strip() if asin else "", geo.strip() if geo else "", domain.strip() if domain else ""
 
 def main():
     st.set_page_config(page_title="Amazon Price Competitor", page_icon=":money_with_wings:", layout="centered")
     render_header()
     asin, geo, domain = render_inputs()
     # Here you can add the logic to fetch and display price information based on the ASIN, Geo location, and domain provided by the user.
-    if st.button("scrape product") and asin:
+    if not asin:
+            st.error("Please enter a valid ASIN to fetch price information.")
+            return
+    if st.button("scrape product"):
+        if not asin:
+            st.error("Please enter a valid ASIN to fetch price information.")
+            return
+
         with st.spinner("Fetching price information..."):
-            # Here you can add the logic to fetch and display price information based on the ASIN, Geo location, and domain provided by the user.
-            # st.write(f"Fetching price information for ASIN: {asin}, Geo: {geo}, Domain: {domain}...")
             product_details = scrape_product_details(asin, geo, domain)
-            if product_details:
-                st.write("Product details fetched successfully!")
-                st.json(product_details)  # Display the fetched product details in a JSON format for better readability
-                db = Database()  # Initialize the database connection
-                db.add_product(product_details)  # Add the fetched product details to the database
-        st.success("Price information fetched successfully!")
+
+        if product_details:
+            st.success("Product details fetched successfully!")
+            st.json(product_details)
+
+            db = Database()
+            db.add_product(product_details)
+        else:
+            st.error("Failed to fetch product details. Please check the ASIN and try again.")
     # elif st.button("scrape product") and not asin:
     #     st.error("Please enter a valid ASIN to fetch price information.")
 
