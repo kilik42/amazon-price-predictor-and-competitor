@@ -1,6 +1,7 @@
 import json
 import os
-import time  
+import time
+from urllib import response  
 import requests
 import streamlit as st
 
@@ -8,6 +9,25 @@ from dotenv import load_dotenv
 
 load_dotenv() # Load environment variables from .env file
 OXYLABS_BASE_URL = "https://api.oxylabs.io/v1/amazon/price" # Base URL for Oxylabs API
+
+def extract_content(payload):
+    # Extract the content from the API response, handling different possible structures of the response
+    if isinstance(payload, dict): # Check if the response is a dictionary, which is the expected structure for the API response
+        # If the response is a dictionary, we can directly access the 'content' key
+        if "results" in payload and isinstance(payload["results"], list) and len(payload["results"]) > 0:
+            first = payload["results"][0] # Get the first result from the results list
+            if isinstance(first, dict) and "content" in first: # Check if the first result is a dictionary and contains the 'content' key
+                return first["content"] or {}  # Return the content of the first result if it exists
+            return payload["results"][0].get("content", {})  # Return the content of the first result if it exists
+        if "content" in payload:
+            return payload["content"] or {}  # Return the content if it exists in the dictionary
+        
+    elif isinstance(payload, list) and len(payload) > 0:
+        # If the response is a list, we can take the first item and access its 'content' key
+        return payload[0].get("content", {})
+    else:
+        # If the response structure is unexpected, return an empty dictionary
+        return {}
 
 def post_query(payload):
     username = os.getenv("OXYLABS_USERNAME")
