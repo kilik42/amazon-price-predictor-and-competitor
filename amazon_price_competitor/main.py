@@ -1,4 +1,6 @@
 import streamlit as st  
+from src.oxylabs_client import scrape_product_details
+from src.db import Database
 
 def render_header():
     st.title("Amazon Price Competitor")
@@ -28,7 +30,13 @@ def main():
     if st.button("scrape product") and asin:
         with st.spinner("Fetching price information..."):
             # Here you can add the logic to fetch and display price information based on the ASIN, Geo location, and domain provided by the user.
-            st.write(f"Fetching price information for ASIN: {asin}, Geo: {geo}, Domain: {domain}...")
+            # st.write(f"Fetching price information for ASIN: {asin}, Geo: {geo}, Domain: {domain}...")
+            product_details = scrape_product_details(asin, geo, domain)
+            if product_details:
+                st.write("Product details fetched successfully!")
+                st.json(product_details)  # Display the fetched product details in a JSON format for better readability
+                db = Database()  # Initialize the database connection
+                db.add_product(product_details)  # Add the fetched product details to the database
         st.success("Price information fetched successfully!")
     # elif st.button("scrape product") and not asin:
     #     st.error("Please enter a valid ASIN to fetch price information.")
