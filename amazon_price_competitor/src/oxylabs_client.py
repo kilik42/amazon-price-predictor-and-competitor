@@ -12,7 +12,7 @@ OXYLABS_BASE_URL = "https://api.oxylabs.io/v1/amazon/price" # Base URL for Oxyla
 
 def extract_content(payload):
     # Extract the content from the API response, handling different possible structures of the response
-    if isinstance(payload, dict): # Check if the response is a dictionary, which is the expected structure for the API response
+    if isinstance(payload, dict): # Check if the response is a dictionary, which is the expected structure for the API response. a payload can be a dictionary or a list, depending on the API response structure. We need to handle both cases to ensure that we can extract the content correctly regardless of how the API returns the data.
         # If the response is a dictionary, we can directly access the 'content' key
         if "results" in payload and isinstance(payload["results"], list) and len(payload["results"]) > 0:
             first = payload["results"][0] # Get the first result from the results list
@@ -28,6 +28,31 @@ def extract_content(payload):
     else:
         # If the response structure is unexpected, return an empty dictionary
         return {}
+    return payload 
+
+
+def scrape_product_details(asin, geo=None, domain=None):
+    # This function is responsible for scraping the product details from the Oxylabs API based on the provided ASIN, Geo location, and domain. It constructs the payload for the API request, sends the request, and processes the response to extract and normalize the product information.
+    payload = {
+        "source": "amazon_product",  # Source identifier for the API request, can be used for tracking and analytics purposes on the Oxylabs side
+        "query": asin,
+        "geo_location": geo,
+        "domain": domain,
+        "parse": True
+    }
+    raw = post_query(payload)  # Send the API request with the constructed payload and get the raw response 
+    content = extract_content(raw)  # Extract the content from the API response
+    normalized = normalize_product(content)  # Normalize the product data to ensure consistent structure       
+    response = post_query(payload)  # Send the API request with the constructed payload
+    if not normalized.get("asin"): # If the normalized product data does not contain an ASIN, we can set it to the ASIN that was used in the query to ensure that we have a reference to the product being scraped, even if the API response did not include the ASIN in the content. This is important for maintaining a consistent structure in the product data and ensuring that we can identify the product correctly in our database and application logic.
+        normalized["asin"] = asin  # Ensure that the ASIN is included in the normalized product data, even if it was not provided in the API response
+    normalized["amazon_domain"] = domain  # Add the Amazon domain to the normalized product data for reference
+    normalized["geo_location"] = geo  # Add the Geo location to the normalized product data for reference
+    
+    return normalized  # Return the normalized product data
+
+
+
 
 def post_query(payload):
     username = os.getenv("OXYLABS_USERNAME")
