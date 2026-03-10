@@ -45,7 +45,7 @@ class Database:
                 else: # For subsequent conditions, we need to combine them with the existing query using the & operator
                     query = query & (Product[key] == value)
         
-        return self.products_table.search(query) if query is not None else self.get_all_products()
+        return self.products_table.search(query) if query is not None else self.get_all_products() or [] # Return all products if no search criteria provided, or an empty list if there are no products in the database
 
         # # Build the query based on the provided search criteria
         # if asin:
