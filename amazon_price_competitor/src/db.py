@@ -1,3 +1,6 @@
+from itertools import product
+from turtle import st
+
 from tinydb import TinyDB, Query
 from datetime import datetime
 import os
@@ -28,6 +31,11 @@ class Database:
 
         # Assuming that ASIN is unique, we can return the first match. If there are multiple entries for the same ASIN, you may want to implement additional logic to return the most recent one.
         return self.products_table.get(Product.asin == asin)
+
+
+    
+
+
 
     def get_all_products(self):
         # Get all products from the database

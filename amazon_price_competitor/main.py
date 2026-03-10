@@ -1,3 +1,5 @@
+from itertools import product
+
 import streamlit as st  
 from src.oxylabs_client import scrape_product_details
 from src.db import Database
@@ -48,6 +50,38 @@ def main():
             st.error("Failed to fetch product details. Please check the ASIN and try again.")
     # elif st.button("scrape product") and not asin:
     #     st.error("Please enter a valid ASIN to fetch price information.")
+def render_product_card(self, product):
+        with st.container(border=True, padding=10):
+            cols = st.columns([1,2])
+            # Display product image in the first column
+            try:
+                images = product.get('images', [])
+                if images and len(images) >0:
+                    cols[0].image(images[0], width=150)
+                else:
+                    cols[0].write("No image available")
+            except Exception as e:
+                cols[0].write("Error loading image")
+
+            # Display product information in the second column
+            with cols[1]:
+                st.subheader(product.get('title', 'No title available') or product["asin"])
+                info_cols = st.columns(3)
+                currency = product.get('currency', '')
+                price = product.get('price', "-")
+                info_cols[0].metric("price", f"{price} {currency}" if currency else price)
+                info_cols[1].write(f"Brand: {product.get('brand', 'N/A')}")
+                info_cols[2].write(f"Product: {product.get('product_overview', 'N/A')}")
+                # st.write(f"URL: {product.get('url', 'N/A')}")   
+                domain_info = f"amazon.{product.get('domain', 'N/A')}" if product.get('domain') else "N/A"
+                geo_info = product.get('geo', 'N/A')
+                st.caption(f"Domain: {domain_info} | Geo: {geo_info}")
+                st.write(product.get("url", "N/A"))
+
+                if st.button("start analyzing competitors", key=f"analyze_{product['asin']}"):
+                    st.session_state["analyzing_asin"] = product['asin']
+                    st.write("Analyzing competitors... (This is a placeholder for the actual competitor analysis logic)")
+                
 
         
 if __name__ == "__main__":
