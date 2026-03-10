@@ -8,7 +8,8 @@ import streamlit as st
 from dotenv import load_dotenv
 
 load_dotenv() # Load environment variables from .env file
-OXYLABS_BASE_URL = "https://api.oxylabs.io/v1/amazon/price" # Base URL for Oxylabs API
+OXYLABS_BASE_URL = "https://api.oxylabs.io/v1/queries"
+ # Base URL for Oxylabs API
 
 def extract_content(payload):
     # Extract the content from the API response, handling different possible structures of the response
@@ -48,7 +49,7 @@ def scrape_product_details(asin, geo=None, domain=None):
         normalized["asin"] = asin  # Ensure that the ASIN is included in the normalized product data, even if it was not provided in the API response
     normalized["amazon_domain"] = domain  # Add the Amazon domain to the normalized product data for reference
     normalized["geo_location"] = geo  # Add the Geo location to the normalized product data for reference
-    
+
     return normalized  # Return the normalized product data
 
 
@@ -99,7 +100,20 @@ def normalize_product(content):
         "product_overview": content.get("product_overview", []),
     }
 
+def scrape_price(asin, geo=None, domain=None):
+    payload = {
+        "asin": asin,
+        "domain": domain,
+        "geo_location": geo
+    }
 
+    return post_query(payload)
+
+def scrape_product_details(asin, geo=None, domain=None):
+    product_data = scrape_price(asin, geo, domain)
+    if product_data:
+        return normalize_product(product_data)
+    return None
 
 # I can try this later
 
