@@ -22,6 +22,7 @@ def post_query(payload):
     )
     if response.status_code == 200:
         print("Price information fetched successfully!")
+        response.raise_for_status()  # Raise an exception for HTTP errors
         return response.json()
     else:
         st.error(f"Error fetching price information: {response.status_code} - {response.text}")
