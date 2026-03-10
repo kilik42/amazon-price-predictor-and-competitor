@@ -28,9 +28,10 @@ def main():
     if st.button("scrape product") and asin:
         with st.spinner("Fetching price information..."):
             # Here you can add the logic to fetch and display price information based on the ASIN, Geo location, and domain provided by the user.
-            st.success("Price information fetched successfully!")
-    elif st.button("scrape product") and not asin:
-        st.error("Please enter a valid ASIN to fetch price information.")
+            st.write(f"Fetching price information for ASIN: {asin}, Geo: {geo}, Domain: {domain}...")
+        st.success("Price information fetched successfully!")
+    # elif st.button("scrape product") and not asin:
+    #     st.error("Please enter a valid ASIN to fetch price information.")
 
         
 if __name__ == "__main__":
