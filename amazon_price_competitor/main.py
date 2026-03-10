@@ -24,34 +24,9 @@ def render_inputs():
     # Here you can add the logic to fetch and display price information based on the selected domain
     return asin.strip() if asin else "", geo.strip() if geo else "", domain.strip() if domain else ""
 
-def main():
-    st.set_page_config(page_title="Amazon Price Competitor", page_icon=":money_with_wings:", layout="centered")
-    render_header()
-    asin, geo, domain = render_inputs()
-    # Here you can add the logic to fetch and display price information based on the ASIN, Geo location, and domain provided by the user.
-    if not asin:
-            st.error("Please enter a valid ASIN to fetch price information.")
-            return
-    if st.button("scrape product"):
-        if not asin:
-            st.error("Please enter a valid ASIN to fetch price information.")
-            return
 
-        with st.spinner("Fetching price information..."):
-            product_details = scrape_product_details(asin, geo, domain)
-
-        if product_details:
-            st.success("Product details fetched successfully!")
-            st.json(product_details)
-
-            db = Database()
-            db.add_product(product_details)
-        else:
-            st.error("Failed to fetch product details. Please check the ASIN and try again.")
-    # elif st.button("scrape product") and not asin:
-    #     st.error("Please enter a valid ASIN to fetch price information.")
-def render_product_card(self, product):
-        with st.container(border=True, padding=10):
+def render_product_card(product):
+        with st.container(border=True):
             cols = st.columns([1,2])
             # Display product image in the first column
             try:
@@ -81,6 +56,37 @@ def render_product_card(self, product):
                 if st.button("start analyzing competitors", key=f"analyze_{product['asin']}"):
                     st.session_state["analyzing_asin"] = product['asin']
                     st.write("Analyzing competitors... (This is a placeholder for the actual competitor analysis logic)")
+
+
+
+def main():
+    st.set_page_config(page_title="Amazon Price Competitor", page_icon=":money_with_wings:", layout="centered")
+    render_header()
+    asin, geo, domain = render_inputs()
+    # Here you can add the logic to fetch and display price information based on the ASIN, Geo location, and domain provided by the user.
+    if not asin:
+            st.error("Please enter a valid ASIN to fetch price information.")
+            return
+    if st.button("scrape product"):
+        if not asin:
+            st.error("Please enter a valid ASIN to fetch price information.")
+            return
+
+        with st.spinner("Fetching price information..."):
+            product_details = scrape_product_details(asin, geo, domain)
+
+        if product_details:
+            st.success("Product details fetched successfully!")
+            render_product_card(product_details)
+            st.json(product_details)
+
+            db = Database()
+            db.add_product(product_details)
+        else:
+            st.error("Failed to fetch product details. Please check the ASIN and try again.")
+    # elif st.button("scrape product") and not asin:
+    #     st.error("Please enter a valid ASIN to fetch price information.")
+
                 
 
         
