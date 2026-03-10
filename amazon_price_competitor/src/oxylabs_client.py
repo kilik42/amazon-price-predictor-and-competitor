@@ -31,26 +31,53 @@ def extract_content(payload):
         return {}
     return payload 
 
-
 def scrape_product_details(asin, geo=None, domain=None):
-    # This function is responsible for scraping the product details from the Oxylabs API based on the provided ASIN, Geo location, and domain. It constructs the payload for the API request, sends the request, and processes the response to extract and normalize the product information.
     payload = {
-        "source": "amazon_product",  # Source identifier for the API request, can be used for tracking and analytics purposes on the Oxylabs side
+        "source": "amazon_product",
         "query": asin,
         "geo_location": geo,
         "domain": domain,
         "parse": True
     }
-    raw = post_query(payload)  # Send the API request with the constructed payload and get the raw response 
-    content = extract_content(raw)  # Extract the content from the API response
-    normalized = normalize_product(content)  # Normalize the product data to ensure consistent structure       
-    response = post_query(payload)  # Send the API request with the constructed payload
-    if not normalized.get("asin"): # If the normalized product data does not contain an ASIN, we can set it to the ASIN that was used in the query to ensure that we have a reference to the product being scraped, even if the API response did not include the ASIN in the content. This is important for maintaining a consistent structure in the product data and ensuring that we can identify the product correctly in our database and application logic.
-        normalized["asin"] = asin  # Ensure that the ASIN is included in the normalized product data, even if it was not provided in the API response
-    normalized["amazon_domain"] = domain  # Add the Amazon domain to the normalized product data for reference
-    normalized["geo_location"] = geo  # Add the Geo location to the normalized product data for reference
 
-    return normalized  # Return the normalized product data
+    raw = post_query(payload)
+    if not raw:
+        return None
+
+    content = extract_content(raw)
+    normalized = normalize_product(content)
+
+    normalized["asin"] = normalized.get("asin") or asin
+    normalized["amazon_domain"] = domain
+    normalized["geo_location"] = geo
+
+    return normalized
+
+
+# def scrape_product_details(asin, geo=None, domain=None):
+#     # This function is responsible for scraping the product details from the Oxylabs API based on the provided ASIN, Geo location, and domain. It constructs the payload for the API request, sends the request, and processes the response to extract and normalize the product information.
+#     payload = {
+#         "source": "amazon_product",  # Source identifier for the API request, can be used for tracking and analytics purposes on the Oxylabs side
+#         "query": asin,
+#         "geo_location": geo,
+#         "domain": domain,
+#         "parse": True
+#     }
+#     raw = post_query(payload)  # Send the API request with the constructed payload and get the raw response
+#     if not raw:
+#       return None 
+#     content = extract_content(raw)  # Extract the content from the API response
+#     normalized = normalize_product(content)  # Normalize the product data to ensure consistent structure  
+#     normalized["asin"] = normalized.get("asin") or asin
+#     normalized["amazon_domain"] = domain
+#     normalized["geo_location"] = geo     
+#     response = post_query(payload)  # Send the API request with the constructed payload
+#     if not normalized.get("asin"): # If the normalized product data does not contain an ASIN, we can set it to the ASIN that was used in the query to ensure that we have a reference to the product being scraped, even if the API response did not include the ASIN in the content. This is important for maintaining a consistent structure in the product data and ensuring that we can identify the product correctly in our database and application logic.
+#         normalized["asin"] = asin  # Ensure that the ASIN is included in the normalized product data, even if it was not provided in the API response
+#     # normalized["amazon_domain"] = domain  # Add the Amazon domain to the normalized product data for reference
+#     # normalized["geo_location"] = geo  # Add the Geo location to the normalized product data for reference
+
+#     return normalized  # Return the normalized product data
 
 
 
@@ -63,17 +90,25 @@ def post_query(payload):
     response = requests.post(
         OXYLABS_BASE_URL,
         json=payload,
-        auth=(username, password),
-        headers={"Authorization": f"Bearer {api_key}"}
+        auth=(username, password)
     )
-    if response.status_code == 200:
-        print("Price information fetched successfully!")
-        response.raise_for_status()  # Raise an exception for HTTP errors
+    # if response.status_code == 200:
+    #     print("Price information fetched successfully!")
+    #     response.raise_for_status()  # Raise an exception for HTTP errors
+    #     return response.json()
+    # else:
+    #     st.error(f"Error fetching price information: {response.status_code} - {response.text}")
+    #     return None
+    try:
+        response.raise_for_status()
         return response.json()
-    else:
-        st.error(f"Error fetching price information: {response.status_code} - {response.text}")
+    except requests.exceptions.HTTPError:
+        st.error(f"Error fetching price information: {response.status_code}")
+        st.code(response.text)
         return None
-
+    except Exception as e:
+        st.error(f"Unexpected error: {e}")
+        return None
 # This function is used to normalize the product data received from the API to ensure that it has a consistent structure, making it easier to work with in the rest of the application. It takes the raw product data as input and returns a normalized version of that data, ensuring that all expected fields are present and properly formatted.   
 def normalize_product(content):
     # Normalize the product data to ensure consistent structure
@@ -102,20 +137,16 @@ def normalize_product(content):
 
 def scrape_price(asin, geo=None, domain=None):
     payload = {
-        "asin": asin,
+        "source": "amazon_product",
+        "query": asin,
         "domain": domain,
-        "geo_location": geo
+        "geo_location": geo,
+        "parse": True
     }
 
     return post_query(payload)
 
-def scrape_product_details(asin, geo=None, domain=None):
-    product_data = scrape_price(asin, geo, domain)
-    if product_data:
-        return normalize_product(product_data)
-    return None
 
-# I can try this later
 
 # class OxylabsClient:
 #     def __init__(self):

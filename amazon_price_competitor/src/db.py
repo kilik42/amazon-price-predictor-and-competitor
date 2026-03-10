@@ -3,10 +3,10 @@ from datetime import datetime
 import os
 
 class Database:
-    def __init__(self, db_path='data.json'):
+    def __init__(self, db_path='data/data.json'):
         dir_path = os.path.dirname(db_path)
-        if not os.path.exists(dir_path):
-            os.makedirs(dir_path)
+        if dir_path and not os.path.exists(dir_path):
+            os.makedirs(dir_path, exist_ok=True)
         self.db = TinyDB(db_path)
         self.products_table = self.db.table('products')
 
@@ -15,9 +15,9 @@ class Database:
         product_data['created_at'] = datetime.now().isoformat()
         self.products_table.insert({
             'asin': product_data['asin'],
-            'geo': product_data['geo'],
-            'domain': product_data['domain'],
-            'price': product_data['price'],
+            'geo': product_data.get('geo_location'),
+            'domain': product_data.get('amazon_domain'),
+            'price': product_data.get('price'),
             'timestamp': datetime.now().isoformat()
         })
         return self.db.table('products').all() # Return all products after adding a new one
@@ -60,12 +60,12 @@ class Database:
         # else:
         #     return self.get_all_products()  # Return all products if no search criteria provided
         
-    def update_product_price(self, asin, new_price):
-        # Update the price of a product based on its ASIN
-        Product = Query()
-        self.products_table.update({'price': new_price}, Product.asin == asin)
+    # def update_product_price(self, asin, new_price):
+    #     # Update the price of a product based on its ASIN
+    #     Product = Query()
+    #     self.products_table.update({'price': new_price}, Product.asin == asin)
 
-    def delete_product(self, asin):
-        # Delete a product from the database based on its ASIN
-        Product = Query()
-        self.products_table.remove(Product.asin == asin)
+    # def delete_product(self, asin):
+    #     # Delete a product from the database based on its ASIN
+    #     Product = Query()
+    #     self.products_table.remove(Product.asin == asin)
