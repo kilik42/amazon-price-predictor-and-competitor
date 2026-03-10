@@ -13,7 +13,7 @@ def render_inputs():
     if asin:
         st.write(f"You entered: {asin}")
         # Here you can add the logic to fetch and display the price information based on the ASIN or URL provided.
-    geo = st.text_input("Enter the Geo location (optional):", placeholder="e.g., US, UK, DE")
+    geo = st.text_input("Enter the zip code  (optional):", placeholder="e.g., 60601 or leave blank")
     if geo:
         st.write(f"You entered Geo location: {geo}")
         # Here you can add the logic to fetch and display price information based on the Geo location provided.

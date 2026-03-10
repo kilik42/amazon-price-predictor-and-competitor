@@ -35,10 +35,11 @@ def scrape_product_details(asin, geo=None, domain=None):
     payload = {
         "source": "amazon_product",
         "query": asin,
-        "geo_location": geo,
-        # "domain": domain,
         "parse": True
     }
+
+    if geo:
+        payload["geo_location"] = geo
 
     raw = post_query(payload)
     if not raw:
@@ -48,7 +49,6 @@ def scrape_product_details(asin, geo=None, domain=None):
     normalized = normalize_product(content)
 
     normalized["asin"] = normalized.get("asin") or asin
-    normalized["amazon_domain"] = domain
     normalized["geo_location"] = geo
 
     return normalized
