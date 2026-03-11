@@ -172,8 +172,8 @@ def main():
                 st.success(f"Refreshed competitors for ASIN: {selected_asin} successfully!")
                 existing_competitors = db.search_products({"parent_asin": selected_asin})  # Fetch the updated list of competitors from the database after refreshing.
         with col1:
-            if st.button("Analyze with LLM", type="primary"):
-                with st.spinner("Analyzing competitors with LLM..."):
+            if st.button("Analyze Market", type="primary"):
+                with st.spinner("Analyzing competitors..."):
                     competitors = db.search_products({"parent_asin": selected_asin})
 
                     summary = generate_competitor_summary(competitors)
