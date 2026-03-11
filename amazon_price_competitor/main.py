@@ -202,8 +202,19 @@ def main():
                     - ASIN: {asin}
                     """)
                     # Here you can add the logic to analyze the competitors using a language model (LLM) or any other analysis method you prefer.
-                    st.write("Analyzing competitors... (This is a placeholder for the actual competitor analysis logic)")
+                    # st.write("Analyzing competitors... (This is a placeholder for the actual competitor analysis logic)")
                     # For example, you could call a function like analyze_competitors_with_llm(existing_competitors) and display the results.
+                     # -----------------------------------------
+            # LLM ANALYSIS BUTTON
+            # -----------------------------------------
+            if st.button("Analyze with LLM", type="primary", key="analyze_llm_btn"):
+                with st.spinner("Analyzing competitors with LLM..."):
+
+                    competitors = db.search_products({"parent_asin": selected_asin})
+
+                    st.subheader("LLM Competitor Analysis")
+
+                    st.write("LLM analysis coming next...")
         
 if __name__ == "__main__":
     main()
