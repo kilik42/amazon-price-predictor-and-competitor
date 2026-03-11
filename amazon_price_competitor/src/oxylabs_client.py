@@ -40,6 +40,8 @@ def scrape_product_details(asin, geo=None, domain=None):
 
     if geo:
         payload["geo_location"] = geo
+    if domain:
+        payload["domain"] = domain
 
     raw = post_query(payload)
     if not raw:
@@ -50,8 +52,128 @@ def scrape_product_details(asin, geo=None, domain=None):
 
     normalized["asin"] = normalized.get("asin") or asin
     normalized["geo_location"] = geo
+    normalized["amazon_domain"] = domain
 
     return normalized
+
+
+def clean_product_name(title):
+    # Clean the product name by removing any extra information after certain delimiters like "-" or "|", which are commonly used in product titles to separate the main title from additional details. This helps to standardize the product names and make them more consistent for comparison and analysis.
+    if "-" in title:
+        # If the title contains a "-", we can split the title at the first occurrence of "-" and take the part before it as the main product name. This is done to remove any additional information that may be included in the title after the "-", which is often used to separate the main product name from other details such as size, color, or other attributes. By taking only the part before the "-", we can focus on the core product name for comparison and analysis
+        title = title.split("-")[0]
+    if "|" in title:
+        # If the title contains a "|", we can split the title at the first occurrence of "|" and take the part before it as the main product name. Similar to the previous case with "-", this is done to remove any additional information that may be included in the title after the "|", which is often used to separate the main product name from other details such as size, color, or other attributes. By taking only the part before the "|", we can focus on the core product name for comparison and analysis.
+        title = title.split("|")[0]
+    return title.strip()
+
+
+
+def extract_search_results(content):
+    items = []
+    if not isinstance(content, dict):
+        return items  # Return an empty list if the content is not a dictionary, as we expect the content to be a dictionary containing the search results. If the content is not in the expected format, we cannot extract the search results, so we return an empty list to indicate that there are no valid search results to process.
+    if "results" in content:
+        results = content["results"] # Extract the search results from the content, which is expected to be a dictionary containing a "results" key that holds the search results data. The structure of the search results can vary, so we need to handle different possible formats to ensure that we can extract the relevant information correctly.
+        if isinstance(results, dict): # Check if the results are in a dictionary format, which is one of the expected formats for the search results. If the results are in a dictionary format, we can check for specific keys such as "organic" and "paid" to extract the relevant search result items. isinstance(results, dict) is used to ensure that we are working with a dictionary structure before trying to access specific keys, which helps to prevent errors and allows us to handle different response formats gracefully.
+            if "organic" in results: # If the results contain an "organic" key, we can extend our items list with the organic search results, which are typically the non-sponsored search results that appear in the main search results section on Amazon. These results are important for competitor analysis as they represent the products that are ranking organically for the given search query.
+                items.extend(results["organic"]) # Extend the items list with the organic search results from the results dictionary, which allows us to gather all the relevant search result items for further processing and analysis in our application. By extending the items list with the organic search results, we can ensure that we have a comprehensive set of search results to work with when performing competitor analysis and other operations on the product data.
+            if "paid" in results: # If the results contain a "paid" key, we can extend our items list with the paid search results, which are typically the sponsored search results that appear in the main search results section on Amazon. These results are important for competitor analysis as they represent the products that are being promoted through advertising for the given search query.
+                items.extend(results["paid"])
+    elif "products" in content and isinstance(content["products"], list):
+        items.extend(content["products"])
+
+    return items 
+
+
+def normalize_search_results(item):
+    # Normalize the search results to ensure consistent structure and to extract the necessary information for competitor analysis. This function takes a raw search result item from the API response and extracts the ASIN, title, price, rating, and other relevant information, while also ensuring that the data is structured in a consistent way for further processing in the application. If the item does not contain either an ASIN or a title, it returns None to indicate that this item should be skipped in the search results, as we need at least one of these pieces of information to identify the product and perform competitor analysis effectively.
+    asin = item.get("asin") or item.get("product_asin")
+    title = item.get("title")
+
+    if not (asin or title):
+        return None  # If either ASIN or title is missing, we cannot normalize this item, so we return None to indicate that this item should be skipped in the search results.
+
+    return {
+        "asin": asin,
+        "title": title,
+        # "brand": item.get("brand"),
+        "price": item.get("price"),
+        # "currency": item.get("currency"),
+        "rating": item.get("rating"),
+        # "url": item.get("url"),
+        # "images": item.get("images", []),
+        "category": item.get("category", []),
+        # "category_path": item.get("category_path", []),
+    }
+
+# gathering competitors amazon search
+def search_competitors(query_title, domain, categories, pages, geo=None):
+    st.write(f"Searching for competitors with query: {query_title}, domain: {domain}, categories: {categories}, pages: {pages}, geo: {geo}")
+
+    search_title = clean_product_name(query_title)
+    results = []
+    seen_asins = set()  # To track seen ASINs and avoid duplicates
+
+    strategies = [
+        "featured",  # Search for featured products
+        "price_asc",  # Search for products sorted by price in ascending order
+        "price_desc",  # Search for products sorted by price in descending order
+        "avg_rating" # Search for products sorted by average rating
+    ]
+    for sort_by in strategies:
+        for page in range(1, max(1,pages) + 1): # Loop through the specified number of pages for each search strategy, starting from page 1 up to the maximum number of pages specified by the user. This allows us to gather a comprehensive set of search results for competitor analysis across different sorting strategies and multiple pages of results.
+            payload = {
+            "source": "amazon_search",
+            "query": search_title,
+            "categories": categories,
+            "page": page,
+            "sort_by": sort_by,
+            "geo_location": geo,
+            "parse": True
+            }
+
+            if domain:
+                payload["domain"] = domain
+            if categories and categories[0]:  # Only include categories in the payload if they are provided and not empty
+                payload["refinements"] = {" category": categories[0]}  # Add the first category as a refinement to the search query to narrow down the search results to products that belong to the specified category, which can help improve the relevance of the search results for competitor analysis.
+            content = extract_content(post_query(payload))
+            items = extract_search_results(content)
+            for item in items:
+                result = normalize_search_results(item)
+                if result and result["asin"] not in seen_asins:  # Only add the result to the results list if it is valid and its ASIN has not been seen before, which helps to avoid duplicates in the search results and ensures that we have a unique set of competitors for analysis.
+                    
+                    seen_asins.add(result["asin"])  # Add the ASIN of the current result to the seen_asins set to track it and prevent future duplicates in the search results.
+                    results.append(result)  # Add the normalized search result to the results list for further processing and analysis in the application.
+            time.sleep(0.1)  # Sleep for a short time between requests to avoid hitting API rate limits and to be respectful of the API provider's resources. This helps to ensure that our application can continue to function smoothly without being blocked or throttled by the API provider due to excessive requests in a short period of time.
+
+    st.write(f"Found {len(results)} unique competitors for the product '{query_title}' across {pages} pages of search results with different sorting strategies.")
+    return results
+
+def scrape_multiple_products(asins, geo=None, domain=None):
+    st.write(f"Scraping product details for ASINs: {asins} with geo: {geo} and domain: {domain}")
+    products = []
+    progress_text = st.empty()  # Create an empty placeholder for the progress text
+    progress_bar = st.progress(0)  # Create a progress bar initialized to 0%
+    total = len(asins)  # Get the total number of ASINs to scrape for progress tracking
+    for idx, a in enumerate(asins, 1):
+        try:
+            progress_text.text(f"processing competitor {idx}/{total} with ASIN: {a}")  # Update the progress text to show the current ASIN being processed and the overall progress in terms of number of ASINs scraped out of the total.
+            progress_bar.progress(idx / total)  # Update the progress bar based on the current index of the ASIN being processed relative to the total number of ASINs, which provides a visual representation of the scraping progress for the user.
+            product = scrape_product_details(a, geo, domain)  # Scrape the product details for the current ASIN using the scrape_product_details function, which will return the normalized product data for that ASIN.
+            products.append(product)  # Add the scraped product details to the products list for further processing and analysis in the application.
+            progress_text.write(f"Successfully scraped product details for ASIN: {a}. Found: {product.get('title',a)}")  # Update the progress text to indicate that the product details for the current ASIN have been successfully scraped, and display the title of the product if available, or the ASIN if the title is not available, to provide feedback to the user about the progress of the scraping process.
+        except Exception as e:
+            progress_text.write(f"Error scraping product details for ASIN: {a}. Error: {e}")  # If an error occurs while scraping the product details for the current ASIN, update the progress text to indicate that there was an error, and display the error message to provide feedback to the user about any issues encountered during the scraping process.
+
+    progress_text.empty()  # Clear the progress text once all ASINs have been processed to clean up the user interface after the scraping process is complete.
+    progress_bar.empty()  # Clear the progress bar once all ASINs have been processed to clean up the user interface after the scraping process is complete.
+    st.write(f"Finished scraping product details for {len(products)} products out of {total} competitors.")  # Display a message indicating that the scraping process is finished and show the total number of products for which details were successfully scraped, providing feedback to the user about the completion of the scraping process.
+    return products  # Return the list of scraped product details for further processing and analysis in the application.
+
+
+
+
 
 
 # def scrape_product_details(asin, geo=None, domain=None):

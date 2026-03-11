@@ -13,18 +13,98 @@ class Database:
         self.db = TinyDB(db_path)
         self.products_table = self.db.table('products')
 
+    # def add_product(self, product_data):
+    #     #product data should be a dictionary with keys: asin, geo, domain, price
+    #     product_data['created_at'] = datetime.now().isoformat()
+    #     self.products_table.insert({
+    #         'asin': product_data['asin'],
+    #         'geo': product_data.get('geo_location'),
+    #         'domain': product_data.get('amazon_domain'),
+    #         'price': product_data.get('price'),
+    #         'timestamp': datetime.now().isoformat()
+    #     })
+    #     return self.db.table('products').all() # Return all products after adding a new one
+    # def add_product(self, product_data):
+    #     product_data = dict(product_data)
+    #     product_data["created_at"] = datetime.now().isoformat()
+    #     product_data["timestamp"] = datetime.now().isoformat()
+    #     self.products_table.insert(product_data)
+    #     return self.products_table.all()
+
+    # def add_product(self, product_data):
+    #     product_data = dict(product_data)
+    #     product_data["created_at"] = datetime.now().isoformat()
+    #     product_data["timestamp"] = datetime.now().isoformat()
+
+    #     Product = Query()
+    #     existing = self.products_table.get(
+    #         (Product.asin == product_data.get("asin")) &
+    #         (Product.parent_asin == product_data.get("parent_asin"))
+    #     )
+
+    #     if existing:
+    #         self.products_table.update(product_data, doc_ids=[existing.doc_id])
+    #     else:
+    #         self.products_table.insert(product_data)
+
+    #     return self.products_table.all()
+    # def add_product(self, product_data):
+    #     if not product_data or not isinstance(product_data, dict):
+    #         return []
+
+    #     product_data["created_at"] = datetime.now().isoformat()
+
+    #     self.products_table.insert({
+    #         "asin": product_data.get("asin"),
+    #         "geo": product_data.get("geo_location"),
+    #         "domain": product_data.get("amazon_domain"),
+    #         "price": product_data.get("price"),
+    #         "title": product_data.get("title"),
+    #         "brand": product_data.get("brand"),
+    #         "images": product_data.get("images", []),
+    #         "currency": product_data.get("currency"),
+    #         "url": product_data.get("url"),
+    #         "parent_asin": product_data.get("parent_asin"),
+    #         "categories": product_data.get("categories", []),
+    #         "category_path": product_data.get("category_path", []),
+    #         "timestamp": datetime.now().isoformat()
+    #     })
+
+    #     return self.products_table.all()
+
     def add_product(self, product_data):
-        #product data should be a dictionary with keys: asin, geo, domain, price
-        product_data['created_at'] = datetime.now().isoformat()
-        self.products_table.insert({
-            'asin': product_data['asin'],
-            'geo': product_data.get('geo_location'),
-            'domain': product_data.get('amazon_domain'),
-            'price': product_data.get('price'),
-            'timestamp': datetime.now().isoformat()
-        })
-        return self.db.table('products').all() # Return all products after adding a new one
-    
+        if not product_data or not isinstance(product_data, dict):
+            return []
+
+        record = {
+            "asin": product_data.get("asin"),
+            "geo": product_data.get("geo_location"),
+            "domain": product_data.get("amazon_domain"),
+            "price": product_data.get("price"),
+            "title": product_data.get("title"),
+            "brand": product_data.get("brand"),
+            "images": product_data.get("images", []),
+            "currency": product_data.get("currency"),
+            "url": product_data.get("url"),
+            "parent_asin": product_data.get("parent_asin"),
+            "categories": product_data.get("categories", []),
+            "category_path": product_data.get("category_path", []),
+            "timestamp": datetime.now().isoformat()
+        }
+
+        Product = Query()
+        existing = self.products_table.get(
+            (Product.asin == record["asin"]) &
+            (Product.parent_asin == record["parent_asin"])
+        )
+
+        if existing:
+            self.products_table.update(record, doc_ids=[existing.doc_id])
+        else:
+            self.products_table.insert(record)
+
+        return self.products_table.all()
+
     def get_product(self, asin):
         # Get the latest price information for a product based on its ASIN
         Product = Query() # Create a query object to search for the product by ASIN
