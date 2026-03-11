@@ -3,6 +3,7 @@ from itertools import product
 import streamlit as st  
 from src.oxylabs_client import scrape_product_details
 from src.db import Database
+from src.services import scrape_and_store_product 
 
 def render_header():
     st.title("Amazon Price Competitor")
@@ -73,7 +74,8 @@ def main():
             return
 
         with st.spinner("Fetching price information..."):
-            product_details = scrape_product_details(asin, geo, domain)
+            # product_details = scrape_product_details(asin, geo, domain)
+            product_details = scrape_and_store_product(asin, geo, domain)  # This function will scrape the product details and store them in the database, and return all products from the database after adding the new product.
 
         if product_details:
             st.success("Product details fetched successfully!")
