@@ -4,7 +4,7 @@ from itertools import product
 import streamlit as st  
 from src.oxylabs_client import scrape_product_details, search_competitors
 from src.db import Database
-from src.services import fetch_and_store_competitors,  scrape_and_store_product 
+from src.services import fetch_and_store_competitors,  scrape_and_store_product , generate_competitor_summary
 
 def render_header():
     st.title("Amazon Price Competitor")
@@ -174,6 +174,33 @@ def main():
         with col1:
             if st.button("Analyze with LLM", type="primary"):
                 with st.spinner("Analyzing competitors with LLM..."):
+                    competitors = db.search_products({"parent_asin": selected_asin})
+
+                    summary = generate_competitor_summary(competitors)
+
+                    st.subheader("Competitor Insights")
+
+                    for line in summary:
+                        st.markdown(line)
+                    
+                    # ----------------------------------
+                    # SHOW COMPETITOR LIST
+                    # ----------------------------------
+
+                    st.subheader("Competitor Products")
+
+                    for comp in competitors:
+                        title = comp.get("title", "Unknown product")
+                        price = comp.get("price", "-")
+                        brand = comp.get("brand", "Unknown")
+                        asin = comp.get("asin")
+
+                        st.markdown(f"""
+                    • **{title}**  
+                    - Brand: {brand}  
+                    - Price: {price}  
+                    - ASIN: {asin}
+                    """)
                     # Here you can add the logic to analyze the competitors using a language model (LLM) or any other analysis method you prefer.
                     st.write("Analyzing competitors... (This is a placeholder for the actual competitor analysis logic)")
                     # For example, you could call a function like analyze_competitors_with_llm(existing_competitors) and display the results.

@@ -4,7 +4,9 @@ import streamlit as st
 
 from src.db import Database
 from src.oxylabs_client import scrape_multiple_products, scrape_product_details, search_competitors
-
+from collections import Counter
+import statistics
+import re
 def scrape_and_store_product(asin, geo=None, domain=None):
     # This function is responsible for scraping the product details using the scrape_product_details function and then storing the scraped data in the database using the Database class. It takes the ASIN, Geo location, and domain as input parameters, scrapes the product details, and then adds the product data to the database.
     data = scrape_product_details(asin, geo, domain)  # Scrape the product details using the provided ASIN, Geo location, and domain
@@ -82,6 +84,82 @@ def fetch_and_store_competitors(parent_asin, geo=None, domain=None, pages=2):
 
 
 
+# This function generates a summary of the competitor analysis based on the list of competitors provided. It analyzes the competitor data to extract insights such as price range, average price, brand distribution, common keywords in product titles, and feature trends. The summary is returned as a list of strings that can be displayed to the user to provide an overview of the competitive landscape for the analyzed ASIN.
+def generate_competitor_summary(competitors):
+
+    if not competitors:
+        return []
+
+    titles = [c.get("title","") for c in competitors]
+    brands = [c.get("brand","Unknown") for c in competitors if c.get("brand")]
+    prices = [c.get("price") for c in competitors if isinstance(c.get("price"), (int,float))]
+
+    # Brand frequency
+    brand_counts = Counter(brands)
+
+    # Keyword extraction
+    words = []
+    for title in titles:
+        words += re.findall(r'\b[a-zA-Z]{4,}\b', title.lower())
+
+    stopwords = {
+        "with","from","this","that","over","wireless",
+        "camera","system","pack","product","black"
+    }
+
+    words = [w for w in words if w not in stopwords]
+    keyword_counts = Counter(words)
+
+    summary = []
+
+    summary.append(f"- Total competitors analyzed: {len(competitors)}")
+
+    if prices:
+        summary.append(f"- Price range: ${min(prices):.2f} – ${max(prices):.2f}")
+        summary.append(f"- Average price: ${statistics.mean(prices):.2f}")
+
+        budget = len([p for p in prices if p < 100])
+        premium = len([p for p in prices if p > 300])
+
+        summary.append(f"- Budget competitors under $100: {budget}")
+        summary.append(f"- Premium competitors above $300: {premium}")
+
+    if brand_counts:
+        top_brands = ", ".join(
+            [f"{b} ({c})" for b,c in brand_counts.most_common(5)]
+        )
+        summary.append(f"- Major brands present: {top_brands}")
+
+    if keyword_counts:
+        keywords = ", ".join([w for w,_ in keyword_counts.most_common(8)])
+        summary.append(f"- Common product keywords: {keywords}")
+
+    # feature detection
+    features = []
+
+    feature_map = [
+        "bluetooth",
+        "noise cancelling",
+        "solar",
+        "night vision",
+        "ptz",
+        "auto tracking",
+        "waterproof",
+        "battery"
+    ]
+
+    title_blob = " ".join(titles).lower()
+
+    for f in feature_map:
+        if f in title_blob:
+            features.append(f)
+
+    if features:
+        summary.append("- Common feature trends:")
+        for f in features:
+            summary.append(f"  - {f.title()}")
+
+    return summary
 
 
 
